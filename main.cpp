@@ -41,6 +41,7 @@ void load_map()		//载入局面调试
 	MapType::step = 0;
 }
 
+//初始化地图并计算哈希值
 void init_map()
 {
 	int inimap[10][10] = {
@@ -57,6 +58,9 @@ void init_map()
 	};
 
 	int l1 = 0, l2 = 0;
+	ABTree::mainMap.HashKey32 = 0;
+	ABTree::mainMap.HashKey64 = 0;
+	int chessType;
 	for (int j = 0; j < MAXSIZE; j++)
 	{
 		for (int k = 0; k < MAXSIZE; k++)
@@ -74,10 +78,17 @@ void init_map()
 				ABTree::mainMap.whiteChess[l2].y = k;
 				l2++;
 			}
+			if (inimap[j][k] != BLANK)
+			{
+				chessType = inimap[j][k];
+				ABTree::mainMap.HashKey32 ^= MapType::HashRand32[j][k][chessType];
+				ABTree::mainMap.HashKey64 ^= MapType::HashRand64[j][k][chessType];
+			}
 		}
 	}
 }
 
+//检查是否进入填格阶段
 int checkFill()
 {
 	for (int i = 0; i < MAXSIZE; i++)
@@ -108,6 +119,7 @@ int checkFill()
 //处理move 命令
 void cmd_move(int color)
 {
+	memset(MapType::HashOK, 0, sizeof(MapType::HashOK));
 	char move[] = "move AAAAAA\n";	//走法
 	if (ABTree::FillBlank == 0 && MapType::step > 40)	//40步之后检查是否到了填格子阶段
 	{
@@ -115,9 +127,17 @@ void cmd_move(int color)
 	}
 	
 	MoveType bestMove;
-	bestMove = ABTree::SearchGoodMove(1, color);
+	int s = clock();
+	bestMove = ABTree::SearchGoodMove(3, color);
+	//printf("%dms\n", clock() - s);
 	ABTree::mainMap.MakeMove(bestMove, color);
-
+	FILE *fp;
+	fp = fopen("out.txt", "a");
+	for (int i = 0; i < 4; i++)
+	{
+		fprintf(fp,"%d\n", MapType::HashOK[i]);
+	}
+	fclose(fp);
 	//将着法转换成要发送的字符形式
 	move[5] = bestMove.x[0] + 'A';
 	move[6] = bestMove.y[0] + 'A';
@@ -127,10 +147,6 @@ void cmd_move(int color)
 	move[10] = bestMove.y[2] + 'A';
 
 	//发送信息
-	FILE *fp;
-	fp = fopen("out.txt", "a");
-	fprintf(fp, "Step:%d\n\n", MapType::step);
-	fclose(fp);
 	printf("%s", move);
 	fflush(stdout);
 }
@@ -140,10 +156,9 @@ int main()
 	int ourcolor, enemycolor;
 	MoveType bestMove;
 	char Msg[500] = { 0 };		//保存接收到的消息
-	char name[] = "name NewValue1.1\n";	//队伍信息
-	init_map();
+	char name[] = "name Remix1.0\n";	//队伍信息
 	ABTree::init();
-	srand((unsigned)time(NULL));
+	init_map();
 	while (1)
 	{
 		//循环接收裁判平台发送的消息

@@ -47,5 +47,10 @@ private:
 	static void Thread_Init();
 
 	static void doThread(int threadNum, int depth, int color);
+
+	static double LookHashTable(double alpha, double beta, int depth, int color, int threadNum);
+
+	static void EnterHashTable(double val, entry_type entry, int depth, int color, int threadNum);
+
 };
 #endif

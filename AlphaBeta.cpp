@@ -37,10 +37,13 @@ void ABTree::thread_work(int num)
 //初始化开启线程，只用一次
 void ABTree::init()
 {
+	srand((unsigned)time(NULL));
+	memset(MapType::HashTable, 0, sizeof(MapType::HashTable));
 	for (int i = 0; i < MAXTHREAD; i++)
 	{
 		ABthread[i]=new thread(ABTree::thread_work,i);
 	}
+	MapType::Hash_init();
 }
 
 void ABTree::exit()
@@ -86,15 +89,80 @@ void ABTree::ThreadAB(int depth, int threadNum, int color)
 	}
 }
 
+//查哈希表
+double ABTree::LookHashTable(double alpha, double beta,int depth, int color, int threadNum)
+{
+	int x;
+	HashItem * HT;
+	x = map[threadNum].HashKey32%PRIME;
+	HT = &MapType::HashTable[x][color];
+	MapType::HashOK[0]++;
+	if (HT->depth >= depth && HT->checksum == map[threadNum].HashKey64)
+	{
+		MapType::HashOK[1]++;
+		switch (HT->entry)
+		{
+		case exact:
+			return HT->val;
+			//上下界需要满足剪枝条件才哈希命中
+		case lower_bound:
+		{
+							if (HT->val >= beta)
+								return HT->val;
+							else
+							{
+								MapType::HashOK[2]++;
+								break;
+							}
+		}
+		case upper_bound:
+		{
+							if (HT->val <= alpha)
+								return HT->val;
+							else
+							{
+								MapType::HashOK[2]++;
+								break;
+							}
+		}
+		default:
+			break;
+		}
+	}
+	return FAL;
+}
+
+//写入哈希表
+void ABTree::EnterHashTable(double val, entry_type entry, int depth, int color, int threadNum)
+{
+	MapType::HashOK[3]++;
+	int x;
+	HashItem * HT;
+	x = map[threadNum].HashKey32%PRIME;
+	HT = &MapType::HashTable[x][color];
+
+	HT->checksum = map[threadNum].HashKey64;
+	HT->entry = entry;
+	HT->val = val;
+	HT->depth = depth;
+}
+
 double ABTree::AlphaBeta(int depth, double alpha, double beta, int color, int threadNum)
 {
 	double val;
 	int best = 0;
 	MoveType bestMove;
+	//优先查表
+	val = LookHashTable(alpha, beta, depth, color % 2, threadNum);
+	if (val != FAL)
+	{
+		return val;
+	}
 	if (depth == 0)
 	{
 
 		val = Eval::Evaluate(color, threadNum,map[threadNum]);
+		EnterHashTable(val, exact, depth, color%2, threadNum);
 		return val;
 	}
 	map[threadNum].CreatMove(color,depth);
@@ -119,7 +187,9 @@ double ABTree::AlphaBeta(int depth, double alpha, double beta, int color, int th
 			bestMove = map[threadNum].MoveStack[depth].moves[i];
 			best = 1;
 			alpha = val;
+			//发生剪枝
 			histor[bestMove.x[0]][bestMove.y[0]][bestMove.x[1]][bestMove.y[1]][bestMove.x[2]][bestMove.y[2]] += (1 << depth);
+			EnterHashTable(val, lower_bound, depth, color % 2, threadNum);
 			return alpha;
 		}
 		if (val > alpha)
@@ -132,18 +202,33 @@ double ABTree::AlphaBeta(int depth, double alpha, double beta, int color, int th
 	if (best)
 	{
 		histor[bestMove.x[0]][bestMove.y[0]][bestMove.x[1]][bestMove.y[1]][bestMove.x[2]][bestMove.y[2]] += (1 << depth);
+		EnterHashTable(alpha, exact, depth, color % 2, threadNum);
+	}
+	else
+	{
+		EnterHashTable(alpha, upper_bound, depth, color % 2, threadNum);
 	}
 	return alpha;
 }
 
+//多线程搜索初始化
 void ABTree::Thread_Init()
 {
+	//初始化历史启发表
+	memset(histor, 0, sizeof(histor));
+	//为线程复制地图
 	for (int i = 0; i < MAXTHREAD; i++)
 	{
 		map[i] = mainMap;
 	}
+	//初始化线程最佳招法估值，不然会选择上一步的遗留招法
+	for (int i = 0; i < MAXTHREAD; i++)
+	{
+		bestMove[i].val = -INF;
+	}
 }
 
+//开启线程
 void ABTree::doThread(int threadNum, int depth, int color)
 {
 	Para[threadNum].color = color;
@@ -169,6 +254,7 @@ MoveType ABTree::SearchGoodMove(int depth, int color)
 
 	NTmove = 0;
 	GlobalAlpha = -INF;
+	//开启多线程搜索
 	Thread_Init();
 	for (int i = 0; i < MAXTHREAD; i++)
 	{
@@ -181,6 +267,7 @@ MoveType ABTree::SearchGoodMove(int depth, int color)
 			
 		}
 	}
+	//选择各个线得到的最好招法
 	for (int i = 0; i < MAXTHREAD; i++)
 	{
 		if (bestMove[i].val>maxval)

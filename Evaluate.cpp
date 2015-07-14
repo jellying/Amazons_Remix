@@ -4,6 +4,7 @@
 int Eval::QueenMove[MAXTHREAD][10][10][2];
 int Eval::KingMove[MAXTHREAD][10][10][2];
 
+//计算双方QueenMove
 void Eval::Queen(const MapType &map, int color,int threadNum)
 {
 	int vis[MAXSIZE][MAXSIZE];
@@ -56,6 +57,7 @@ void Eval::Queen(const MapType &map, int color,int threadNum)
 	}
 }
 
+//计算双方KingMove
 void Eval::King(const MapType& map, int color, int threadNum)
 {
 	int vis[MAXSIZE][MAXSIZE];
@@ -102,6 +104,7 @@ void Eval::King(const MapType& map, int color, int threadNum)
 	}
 }
 
+//计算双方灵活度差
 double Eval::CalMob(MapType map, int threadNum)
 {
 	point nowred, nowwhite, nextred, nextwhite;
