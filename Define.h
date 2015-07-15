@@ -12,7 +12,7 @@
 #define		MINSMULATE	5			//最小模拟量
 #define		TIMES		6			//蒙特卡洛估值层数
 #define		UCB_K		1.0			//UCB_K参数
-#define		MAXTHREAD   6			//线程数
+#define		MAXTHREAD   1			//线程数
 #define		MAXDEPTH	15
 #define		PRIME		2499997
 #define		FAL			86421357
@@ -28,3 +28,5 @@
 #include <ctime>
 #include <cmath>
 using namespace std;
+
+typedef unsigned long long int Un64;

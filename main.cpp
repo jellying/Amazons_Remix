@@ -86,6 +86,26 @@ void init_map()
 			}
 		}
 	}
+	int x, y;
+	memset(ABTree::mainMap.MobVal, 0, sizeof(ABTree::mainMap.MobVal));
+	for (int i = 0; i < MAXSIZE; i++)
+	{
+		for (int j = 0; j < MAXSIZE; j++)
+		{
+			if (ABTree::mainMap.mappoint[i][j] == BLANK)
+			{
+				for (int k = 0; k < 8; k++)
+				{
+					x = i + MapType::dir[k][0];
+					y = j + MapType::dir[k][1];
+					if (InBoard(x, y) && ABTree::mainMap.mappoint[x][y] == BLANK)
+					{
+						ABTree::mainMap.MobVal[x][y]++;
+					}
+				}
+			}
+		}
+	}
 }
 
 //检查是否进入填格阶段
@@ -131,9 +151,10 @@ void cmd_move(int color)
 	MoveType bestMove;
 	int s = clock();
 	bestMove = ABTree::DeepingIter(3, color);
-	//fprintf(fp,"%dms\n", clock() - s);
+//	fprintf(fp,"%dms\n", clock() - s);
 	ABTree::mainMap.MakeMove(bestMove, color);
-	
+//	fprintf(fp, "val:%lf\n", bestMove.val);
+
 	for (int i = 0; i < 4; i++)
 	{
 //		fprintf(fp,"%d\n", MapType::HashOK[i]);
@@ -150,7 +171,7 @@ void cmd_move(int color)
 	//发送信息
 	printf("%s", move);
 	fflush(stdout);
-	fprintf(fp, "%s\n", move);
+//	fprintf(fp, "%s\n", move);
 	fclose(fp);
 }
 

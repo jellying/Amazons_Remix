@@ -338,6 +338,10 @@ MoveType ABTree::DeepingIter(int depth, int color)
 	//一层估值排序,保证多线程局面稳定
 	SearchGoodMove(1, color);
 	qsort(mainMap.MoveStack[0].moves, mainMap.MoveStack[0].len, sizeof(MoveType), comp1);
+	if (mainMap.MoveStack[0].len > 400)
+	{
+		mainMap.MoveStack[0].len = 400;
+	}
 	for (int i = 0; i < mainMap.MoveStack[0].len; i++)
 	{
 		mainMap.MoveStack[0].moves[i].num = i;

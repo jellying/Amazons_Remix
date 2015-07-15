@@ -40,6 +40,7 @@ void MapType::MakeMove(const MoveType &move ,int color)
 	}
 
 	HashMove(move, color);
+	MobMove(move, color);
 }
 
 void MapType::UnMakeMove(const MoveType &move, int color)
@@ -70,6 +71,7 @@ void MapType::UnMakeMove(const MoveType &move, int color)
 		}
 	}
 	UnHashMove(move, color);
+	UnMobMove(move, color);
 }
 
 //生成招法
@@ -184,4 +186,69 @@ void MapType::UnHashMove(const MoveType &move, int color)
 	HashKey32 ^= HashRand32[move.x[0]][move.y[0]][color];
 	HashKey64 ^= HashRand64[move.x[0]][move.y[0]][color];
 
+}
+
+//执行招法
+void MapType::MobMove(const MoveType &move, int color)
+{
+	int nx[3], ny[3];
+	for (int i = 0; i < 8; i++)//更新三个点的自由度和周边格子的自由度
+	{
+		nx[0] = move.x[0] + dir[i][0];
+		ny[0] = move.y[0] + dir[i][1];
+		nx[1] = move.x[1] + dir[i][0];
+		ny[1] = move.y[1] + dir[i][1];
+		nx[2] = move.x[2] + dir[i][0];
+		ny[2] = move.y[2] + dir[i][1];
+		if (InBoard(nx[0], ny[0]) && mappoint[nx[0]][ny[0]] == BLANK)
+		{
+			MobVal[nx[0]][ny[0]]++;
+			MobVal[move.x[0]][move.y[0]]++;
+		}
+		if (InBoard(nx[1], ny[1]) && mappoint[nx[1]][ny[1]] == BLANK && (nx[1] != move.x[0] || ny[1] != move.y[0]))
+		{
+			MobVal[nx[1]][ny[1]]--;
+		}
+		if (InBoard(nx[2], ny[2]) && mappoint[nx[2]][ny[2]] == BLANK && (nx[2] != move.x[0] || ny[2] != move.y[0]))
+		{
+			MobVal[nx[2]][ny[2]]--;
+		}
+	}
+	MobVal[move.x[2]][move.y[2]] = 0;//放置障碍点自由度为0，周围点减1
+	MobVal[move.x[1]][move.y[1]] = 0;//落子点自由度为0
+}
+
+void MapType::UnMobMove(const MoveType &move, int color)
+{
+	int nx[3], ny[3];
+	for (int i = 0; i < 8; i++)//更新三个点的自由度和周边格子的自由度
+	{
+		nx[0] = move.x[0] + dir[i][0];
+		ny[0] = move.y[0] + dir[i][1];
+		nx[1] = move.x[1] + dir[i][0];
+		ny[1] = move.y[1] + dir[i][1];
+		nx[2] = move.x[2] + dir[i][0];
+		ny[2] = move.y[2] + dir[i][1];
+		if (InBoard(nx[0], ny[0]) && mappoint[nx[0]][ny[0]] == BLANK && (nx[0] != move.x[1] || ny[0] != move.y[1]) && (nx[0] != move.x[2] || ny[0] != move.y[2]))
+		{
+			MobVal[nx[0]][ny[0]]--;
+		}
+		if (InBoard(nx[1], ny[1]) && mappoint[nx[1]][ny[1]] == BLANK)
+		{
+			if (nx[1] != move.x[2] || ny[1] != move.y[2])
+			{
+				MobVal[nx[1]][ny[1]]++;
+			}
+			MobVal[move.x[1]][move.y[1]]++;
+		}
+		if (InBoard(nx[2], ny[2]) && mappoint[nx[2]][ny[2]] == BLANK)
+		{
+			if (nx[2] != move.x[1] || ny[2] != move.y[1])
+			{
+				MobVal[nx[2]][ny[2]]++;
+			}
+			MobVal[move.x[2]][move.y[2]]++;
+		}
+	}
+	MobVal[move.x[0]][move.y[0]] = 0;
 }

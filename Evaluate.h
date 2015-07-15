@@ -16,7 +16,7 @@ private:
 
 	static void King(const MapType& map, int color, int threadNum);
 
-	static double CalMob(MapType map, int threadNum);
+	static double CalMob(const MapType& map, int threadNum,int color,double timew);
 
 
 };

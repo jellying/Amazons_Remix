@@ -4,7 +4,6 @@
 #include "Define.h"
 #include <cstring>
 
-typedef unsigned long long int Un64;
 
 enum entry_type
 {
@@ -66,6 +65,8 @@ public:
 
 	int mappoint[MAXSIZE][MAXSIZE];
 
+	int MobVal[MAXSIZE][MAXSIZE];
+
 	void MakeMove(const MoveType &move,int color);
 
 	void UnMakeMove(const MoveType &move, int color);
@@ -84,6 +85,9 @@ private:
 
 	void UnHashMove(const MoveType &move, int color);
 
+	void MobMove(const MoveType &move, int color);
+
+	void UnMobMove(const MoveType &move, int color);
 };
 
 #endif
