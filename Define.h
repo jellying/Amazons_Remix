@@ -14,7 +14,7 @@
 #define		UCB_K		1.0			//UCB_K参数
 #define		MAXTHREAD   6			//线程数
 #define		MAXDEPTH	15
-#define		PRIME		24999983
+#define		PRIME		2499997
 #define		FAL			86421357
 #define		InBoard(a,b)	(a>=0 && a<10 && b>=0 && b<10)
 #define		MIN(a,b)	a>b?b:a

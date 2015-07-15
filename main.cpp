@@ -119,6 +119,8 @@ int checkFill()
 //处理move 命令
 void cmd_move(int color)
 {
+	FILE *fp;
+	fp = fopen("out.txt", "a");
 	memset(MapType::HashOK, 0, sizeof(MapType::HashOK));
 	char move[] = "move AAAAAA\n";	//走法
 	if (ABTree::FillBlank == 0 && MapType::step > 40)	//40步之后检查是否到了填格子阶段
@@ -128,16 +130,15 @@ void cmd_move(int color)
 	
 	MoveType bestMove;
 	int s = clock();
-	bestMove = ABTree::SearchGoodMove(3, color);
-	//printf("%dms\n", clock() - s);
+	bestMove = ABTree::DeepingIter(3, color);
+	//fprintf(fp,"%dms\n", clock() - s);
 	ABTree::mainMap.MakeMove(bestMove, color);
-	FILE *fp;
-	fp = fopen("out.txt", "a");
+	
 	for (int i = 0; i < 4; i++)
 	{
-		fprintf(fp,"%d\n", MapType::HashOK[i]);
+//		fprintf(fp,"%d\n", MapType::HashOK[i]);
 	}
-	fclose(fp);
+	
 	//将着法转换成要发送的字符形式
 	move[5] = bestMove.x[0] + 'A';
 	move[6] = bestMove.y[0] + 'A';
@@ -149,6 +150,8 @@ void cmd_move(int color)
 	//发送信息
 	printf("%s", move);
 	fflush(stdout);
+	fprintf(fp, "%s\n", move);
+	fclose(fp);
 }
 
 int main()

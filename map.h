@@ -62,7 +62,7 @@ public:
 
 	static Un64 HashRand64[MAXSIZE][MAXSIZE][4];
 	static unsigned int HashRand32[MAXSIZE][MAXSIZE][4];
-	static HashItem HashTable[25000000][2];
+	static HashItem HashTable[2500000][2];
 
 	int mappoint[MAXSIZE][MAXSIZE];
 

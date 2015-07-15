@@ -6,6 +6,16 @@ int comp(const void *b, const void *a)
 	return (((MoveType *)a)->rating) - (((MoveType *)b)->rating);
 }
 
+int comp1(const void *b, const void *a)
+{
+	if ((((MoveType *)a)->val) - (((MoveType *)b)->val)>0)
+		return 1;
+	else if ((((MoveType *)a)->val) - (((MoveType *)b)->val) == 0)
+		return 0;
+	else if ((((MoveType *)a)->val) - (((MoveType *)b)->val) < 0)
+		return -1;
+}
+
 MapType ABTree::mainMap;
 int ABTree::FillBlank = 0;
 MapType ABTree::map[MAXTHREAD];
@@ -15,6 +25,7 @@ threadPara ABTree::Para[MAXTHREAD];
 condition_variable ABTree::order[MAXTHREAD];
 int ABTree::NTmove;
 mutex ABTree::movelock;
+mutex ABTree::hashlock;
 mutex ABTree::conlock[MAXTHREAD];
 MoveType ABTree::bestMove[MAXTHREAD];
 int ABTree::histor[10][10][10][10][10][10];
@@ -74,6 +85,13 @@ void ABTree::ThreadAB(int depth, int threadNum, int color)
 		{
 			alpha = val;
 			bestMove[threadNum] = mainMap.MoveStack[0].moves[i];
+		}
+		else if (val == alpha)
+		{
+			if (bestMove[threadNum].num > mainMap.MoveStack[0].moves[i].num)
+			{
+				bestMove[threadNum] = mainMap.MoveStack[0].moves[i];
+			}
 		}
 		movelock.lock();
 		if (alpha > GlobalAlpha)
@@ -245,13 +263,17 @@ void ABTree::doThread(int threadNum, int depth, int color)
 
 MoveType ABTree::SearchGoodMove(int depth, int color)
 {
-	int maxval = -INF;
+	double maxval = -INF;
 	MoveType best;
-	mainMap.CreatMove(color, 0);
 
-	FILE *fp;
-	fp = fopen("out.txt", "a");
-
+	if (depth >= 2)
+	{
+		qsort(mainMap.MoveStack[0].moves, mainMap.MoveStack[0].len, sizeof(MoveType), comp1);
+		for (int i = 0; i < mainMap.MoveStack[0].len; i++)
+		{
+			mainMap.MoveStack[0].moves[i].num = i;
+		}
+	}
 	NTmove = 0;
 	GlobalAlpha = -INF;
 	//开启多线程搜索
@@ -275,6 +297,13 @@ MoveType ABTree::SearchGoodMove(int depth, int color)
 			maxval = bestMove[i].val;
 			best = bestMove[i];
 		}
+		else if (bestMove[i].val == maxval)
+		{
+			if (bestMove[i].num < best.num)
+			{
+				best = bestMove[i];
+			}
+		}
 	}
 
 	/*map[0] = mainMap;
@@ -293,6 +322,33 @@ MoveType ABTree::SearchGoodMove(int depth, int color)
 			best = mainMap.MoveStack[0].moves[i];
 		}
 	}*/
+	return best;
+}
+
+//迭代加深搜索
+MoveType ABTree::DeepingIter(int depth, int color)
+{
+	int maxval = -INF;
+	MoveType best;
+	mainMap.CreatMove(color, 0);
+	FILE *fp;
+	fp = fopen("out.txt", "a");
+	//每次清楚哈希表保证用一层估值排序不受影响
+	memset(MapType::HashTable, 0, sizeof(MapType::HashTable));
+	//一层估值排序,保证多线程局面稳定
+	SearchGoodMove(1, color);
+	qsort(mainMap.MoveStack[0].moves, mainMap.MoveStack[0].len, sizeof(MoveType), comp1);
+	for (int i = 0; i < mainMap.MoveStack[0].len; i++)
+	{
+		mainMap.MoveStack[0].moves[i].num = i;
+	}
+	//迭代加深排序，会使一层招法顺序混乱，取招法时用序号二次排序也无法使局面稳定
+	/*int i = 1;
+	for (; i <= depth; i++)
+	{
+		best = SearchGoodMove(i, color);
+	}*/
+	best = SearchGoodMove(depth, color);
 	fclose(fp);
 	return best;
 }

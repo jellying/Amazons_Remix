@@ -7,7 +7,7 @@ int MapType::start;
 int MapType::end;
 Un64 MapType::HashRand64[MAXSIZE][MAXSIZE][4];
 unsigned int MapType::HashRand32[MAXSIZE][MAXSIZE][4];
-HashItem MapType::HashTable[25000000][2];
+HashItem MapType::HashTable[2500000][2];
 int MapType::HashOK[4];
 
 //执行、撤销招法

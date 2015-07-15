@@ -20,6 +20,8 @@ public:
 
 	static MoveType SearchGoodMove(int depth, int color);
 
+	static MoveType DeepingIter(int depth, int color);
+
 	static void init();
 
 	static void exit();
@@ -32,7 +34,7 @@ private:
 	static condition_variable order[MAXTHREAD];
 	static int NTmove;
 	static double GlobalAlpha;
-	static mutex movelock;
+	static mutex movelock, hashlock;
 	static MoveType bestMove[MAXTHREAD];
 
 
