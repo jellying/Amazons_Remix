@@ -3,6 +3,7 @@ int MapType::dir[8][2] = { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 }, { 1, 1 }, {
 
 int MapType::step = 0;
 
+
 int MapType::start;
 int MapType::end;
 Un64 MapType::HashRand64[MAXSIZE][MAXSIZE][4];
@@ -10,8 +11,14 @@ unsigned int MapType::HashRand32[MAXSIZE][MAXSIZE][4];
 HashItem MapType::HashTable[2500000][2];
 int MapType::HashOK[4];
 
+MapType::MapType()
+{
+}
+
+
+
 //执行、撤销招法
-void MapType::MakeMove(const MoveType &move ,int color)
+void MapType::MakeMove( MoveType &move ,int color)
 {
 	mappoint[move.x[0]][move.y[0]] = BLANK;
 	mappoint[move.x[1]][move.y[1]] = color;
@@ -43,7 +50,7 @@ void MapType::MakeMove(const MoveType &move ,int color)
 	MobMove(move, color);
 }
 
-void MapType::UnMakeMove(const MoveType &move, int color)
+void MapType::UnMakeMove( MoveType &move, int color)
 {
 	mappoint[move.x[2]][move.y[2]] = BLANK;
 	mappoint[move.x[1]][move.y[1]] = BLANK;
@@ -125,44 +132,51 @@ void MapType::CreatMove(int color,int depth)
 //生成随机数
 Un64 MapType::rand64()
 {
-	Un64 randnum = rand();
+	Un64 randnum =(Un64)rand();
 	for (int i = 0; i < 4; i++)
 	{
 		randnum <<= 15;
-		randnum ^= rand();
+		randnum ^= (Un64)rand();
 	}
 	return randnum;
+//	return (Un64)rand() ^ ((Un64)rand() << 15) ^ ((Un64)rand() << 30) ^ ((Un64)rand() << 45) ^ ((Un64)rand() << 60);
 }
 
 unsigned int MapType::rand32()
 {
-	unsigned int randnum = rand();
+	unsigned int randnum = (Un64)rand();
 	for (int i = 0; i < 2; i++)
 	{
 		randnum <<= 15;
-		randnum ^= rand();
+		randnum ^= (Un64)rand();
 	}
 	return randnum;
+	//return (Un64)rand() ^ ((Un64)rand() << 15) ^ ((Un64)rand() << 30);
 }
 
 //初始化随机哈希值
 void MapType::Hash_init()
 {
+	srand((unsigned)time(NULL));
+	FILE * fp;
+	fp = fopen("HashVal.data", "r");
 	for (int i = 0; i < MAXSIZE; i++)
 	{
 		for (int j = 0; j < MAXSIZE; j++)
 		{
 			for (int k = 1; k < 4; k++)
 			{
-				HashRand32[i][j][k] = rand32();
-				HashRand64[i][j][k] = rand64();
+			//	HashRand32[i][j][k] = rand32();
+			//	HashRand64[i][j][k] = rand64();
+				fscanf(fp, "%lu %llu ", &HashRand32[i][j][k], &HashRand64[i][j][k]);
 			}
 		}
 	}
+	fclose(fp);
 }
 
 //在执行招法撤销招法中修改哈希值
-void MapType::HashMove(const MoveType &move, int color)
+void MapType::HashMove( MoveType &move, int color)
 {
 	HashKey32 ^= HashRand32[move.x[0]][move.y[0]][color];
 	HashKey64 ^= HashRand64[move.x[0]][move.y[0]][color];
@@ -174,7 +188,7 @@ void MapType::HashMove(const MoveType &move, int color)
 	HashKey64 ^= HashRand64[move.x[2]][move.y[2]][STONE];
 }
 
-void MapType::UnHashMove(const MoveType &move, int color)
+void MapType::UnHashMove( MoveType &move, int color)
 {
 
 	HashKey32 ^= HashRand32[move.x[2]][move.y[2]][STONE];
@@ -189,7 +203,7 @@ void MapType::UnHashMove(const MoveType &move, int color)
 }
 
 //执行招法
-void MapType::MobMove(const MoveType &move, int color)
+void MapType::MobMove( MoveType &move, int color)
 {
 	int nx[3], ny[3];
 	for (int i = 0; i < 8; i++)//更新三个点的自由度和周边格子的自由度
@@ -218,7 +232,7 @@ void MapType::MobMove(const MoveType &move, int color)
 	MobVal[move.x[1]][move.y[1]] = 0;//落子点自由度为0
 }
 
-void MapType::UnMobMove(const MoveType &move, int color)
+void MapType::UnMobMove( MoveType &move, int color)
 {
 	int nx[3], ny[3];
 	for (int i = 0; i < 8; i++)//更新三个点的自由度和周边格子的自由度

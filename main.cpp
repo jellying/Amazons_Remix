@@ -2,22 +2,26 @@
 #define _MAIN_CPP
 #include "Define.h"
 #include "AlphaBeta.h"
+#include "UCT.h"
 
 void load_map()		//载入局面调试
 {
 	int l1 = 0, l2 = 0;
+	int chessType;
+	ABTree::mainMap.HashKey32 = 0;
+	ABTree::mainMap.HashKey64 = 0;
 	int loadmap[10][10] =
 	{
-		0, 0, 0, 0, 2, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 3, 0, 0, 0,
-		0, 3, 1, 0, 0, 3, 1, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 3, 0, 0,
-		0, 0, 0, 0, 3, 3, 0, 0, 3, 3,
-		3, 3, 0, 0, 0, 0, 3, 2, 0, 0,
-		0, 0, 0, 0, 3, 0, 0, 0, 0, 0,
-		2, 3, 3, 3, 3, 0, 2, 1, 0, 0,
-		1, 0, 0, 0, 3, 0, 0, 0, 0, 0,
-		0, 3, 3, 0, 3, 0, 0, 3, 0, 0,
+		1, 1, 3, 3, 3, 3, 3, 3, 2, 2,
+		1, 3, 3, 3, 3, 3, 3, 0, 3, 3,
+		3, 0, 0, 0, 3, 3, 2, 0, 0, 0,
+		0, 3, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 3, 0, 0, 0, 0,
+		0, 1, 0, 3, 0, 3, 0, 0, 0, 2,
+		0, 0, 0, 0, 0, 3, 0, 0, 0, 0,
+		3, 3, 3, 3, 3, 3, 3, 3, 3, 0,
+		3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+		3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	};
 	for (int i = 0; i < 10; i++)
 	{
@@ -36,9 +40,35 @@ void load_map()		//载入局面调试
 				ABTree::mainMap.whiteChess[l2].y = j;
 				l2++;
 			}
+			if (loadmap[i][j] != BLANK)
+			{
+				chessType = loadmap[i][j];
+				ABTree::mainMap.HashKey32 ^= MapType::HashRand32[i][j][chessType];
+				ABTree::mainMap.HashKey64 ^= MapType::HashRand64[i][j][chessType];
+			}
 		}
 	}
 	MapType::step = 0;
+	int x, y;
+	memset(ABTree::mainMap.MobVal, 0, sizeof(ABTree::mainMap.MobVal));
+	for (int i = 0; i < MAXSIZE; i++)
+	{
+		for (int j = 0; j < MAXSIZE; j++)
+		{
+			if (ABTree::mainMap.mappoint[i][j] == BLANK)
+			{
+				for (int k = 0; k < 8; k++)
+				{
+					x = i + MapType::dir[k][0];
+					y = j + MapType::dir[k][1];
+					if (InBoard(x, y) && ABTree::mainMap.mappoint[x][y] == BLANK)
+					{
+						ABTree::mainMap.MobVal[x][y]++;
+					}
+				}
+			}
+		}
+	}
 }
 
 //初始化地图并计算哈希值
@@ -150,14 +180,32 @@ void cmd_move(int color)
 	
 	MoveType bestMove;
 	int s = clock();
-	bestMove = ABTree::DeepingIter(3, color);
-//	fprintf(fp,"%dms\n", clock() - s);
+	if (MapType::step < 18 || ABTree::FillBlank == 1)
+		bestMove = ABTree::DeepingIter(3, color);
+	else if (MapType::step < 36)
+		bestMove = ABTree::DeepingIter(4, color);
+	else
+		bestMove = ABTree::DeepingIter(5, color);
+//	bestMove = ABTree::DeepingIter(3, color);
+//	printf("%dms\n", clock() - s);
+	/*if (ABTree::FillBlank == 1)
+	{
+		UCTree::MAXTIME = 3000;
+	} 
+	else
+	{
+		UCTree::MAXTIME = 20000;
+	}
+	bestMove = UCTree::SearchGoodMove(color);*/
+
 	ABTree::mainMap.MakeMove(bestMove, color);
+//	printf("%dms\n", UCTree::timesum);
 //	fprintf(fp, "val:%lf\n", bestMove.val);
+//	printf("%dms\n", clock() - s);
 
 	for (int i = 0; i < 4; i++)
 	{
-//		fprintf(fp,"%d\n", MapType::HashOK[i]);
+		fprintf(fp,"%d\n", MapType::HashOK[i]);
 	}
 	
 	//将着法转换成要发送的字符形式
@@ -180,8 +228,9 @@ int main()
 	int ourcolor, enemycolor;
 	MoveType bestMove;
 	char Msg[500] = { 0 };		//保存接收到的消息
-	char name[] = "name Remix1.0\n";	//队伍信息
+	char name[] = "name Gradually1.0\n";	//队伍信息
 	ABTree::init();
+	UCTree::thread_init();
 	init_map();
 	while (1)
 	{
@@ -218,6 +267,7 @@ int main()
 				ourcolor = WHITE;
 				enemycolor = RED;
 				cmd_move(ourcolor); //白方先走，所以搜索第一步走法
+				MapType::step++;
 				continue;
 			}
 			else
@@ -227,7 +277,7 @@ int main()
 				enemycolor = WHITE;
 				continue;
 			}
-
+			Eval::ourcolor = ourcolor;
 			continue;
 		}
 
@@ -246,8 +296,33 @@ int main()
 				bestMove.y[2] = Msg[5] - 'A';
 				//执行对方招法
 				ABTree::mainMap.MakeMove(bestMove, enemycolor);
+				MapType::step++;
+
+				//将根下移并保留
+			/*	int find = 0;
+				if (UCTree::root != NULL)
+				{
+					for (int i = 0; i < UCTree::root->len; i++)
+					{
+						if (bestMove.x[0] == UCTree::root->move[i].x[0] && bestMove.x[1] == UCTree::root->move[i].x[1] && bestMove.x[2] == UCTree::root->move[i].x[2] && bestMove.y[0] == UCTree::root->move[i].y[0] && bestMove.y[1] == UCTree::root->move[i].y[1] && bestMove.y[2] == UCTree::root->move[i].y[2])
+						{
+							UCTree::root = UCTree::root->move[i].child;
+							find = 1;
+							break;
+						}
+					}
+				}
+				if (find)
+				{
+					for (int i = 0; i < UCTree::sum; i++)
+					{
+						UCTree::nodes[i]->flag = false;
+					}
+					UCTree::Save(UCTree::root);
+				}*/
 			}
 			cmd_move(ourcolor);
+			MapType::step++;
 			continue;
 		}
 

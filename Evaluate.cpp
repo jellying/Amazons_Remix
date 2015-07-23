@@ -4,6 +4,7 @@
 int Eval::QueenMove[MAXTHREAD][10][10][2];
 int Eval::KingMove[MAXTHREAD][10][10][2];
 
+int Eval::ourcolor;
 //计算双方QueenMove
 void Eval::Queen(const MapType &map, int color,int threadNum)
 {
@@ -112,9 +113,9 @@ double Eval::CalMob(const MapType& map, int threadNum,int color,double timew)
 	double detaM = 0;
 	int kingstep;
 	double Score=0, mobility1=0, mobility2=0;
-	double MobPara = 0.3*timew;
-	if (map.step > 30)
-		return 0;
+	double MobPara = 0.2*timew;
+	/*if (map.step > 30)
+		return 0;*/
 	double whiteM = 0, redM = 0;
 	for (int i = 0; i < 4; i++)		//计算双方灵活度
 	{
@@ -261,13 +262,14 @@ double Eval::Evaluate(int color, int threadNum,const MapType& map)
 		King = -King;
 	}
 	timew = sqrt(w / 100);
-	QPara = 1 - 1.2 * timew;
-	KPara = 0.7*timew;
-	C1Para = 0.25*timew;
-	C2Para = 0.25*timew;
+	QPara = 1 - 0.6 * timew;
+	KPara = 0.2*timew;
+	C1Para = 0.4*timew;
+	C2Para = 0.5*timew;
 	mobility = CalMob(map, threadNum, color, timew);
 
 	Score = Queen * QPara + King*KPara + c1*C1Para + c2*C2Para + mobility;
+//	Score = Queen + King;
 	return Score;
 }
 

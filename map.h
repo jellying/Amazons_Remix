@@ -10,11 +10,7 @@ enum entry_type
 	exact, lower_bound, upper_bound
 };
 
-class point
-{
-public:
-	int x, y;
-};
+class Node;
 
 class MoveType
 {
@@ -23,7 +19,34 @@ public:
 	double val;
 	int rating;
 	int num;
+	Node* child;
+	int visit;
+	int win;
+	int color;
 };
+
+
+class Node
+{
+public:
+	int visit;
+	int win;
+	int depth;
+	int color;
+	MoveType *move;
+	int len;
+	Node *parent;
+	MoveType *lastMove;
+	bool flag;
+};
+
+
+class point
+{
+public:
+	int x, y;
+};
+
 
 class StackType
 {
@@ -31,6 +54,7 @@ public:
 	MoveType moves[MAXMOVE];
 	int len;
 };
+
 
 class HashItem
 {
@@ -41,9 +65,29 @@ public:
 	double val;
 };
 
+class HashEntry
+{
+public:
+	Un64 hash64;
+	unsigned hash32;
+	int depth;
+	int color;
+
+};
+
+class HashRes
+{
+public:
+	double val;
+	entry_type entry;
+};
+
 class MapType
 {
 public:
+
+	MapType();
+
 	static int HashOK[4];
 
 	static int start, end;
@@ -67,9 +111,9 @@ public:
 
 	int MobVal[MAXSIZE][MAXSIZE];
 
-	void MakeMove(const MoveType &move,int color);
+	void MakeMove(MoveType &move,int color);
 
-	void UnMakeMove(const MoveType &move, int color);
+	void UnMakeMove(MoveType &move, int color);
 
 	void CreatMove(int color,int depth);
 
@@ -79,15 +123,16 @@ public:
 
 	static void Hash_init();
 
+
 private:
 
-	void HashMove(const MoveType &move, int color);
+	void HashMove(MoveType &move, int color);
 
-	void UnHashMove(const MoveType &move, int color);
+	void UnHashMove(MoveType &move, int color);
 
-	void MobMove(const MoveType &move, int color);
+	void MobMove(MoveType &move, int color);
 
-	void UnMobMove(const MoveType &move, int color);
+	void UnMobMove(MoveType &move, int color);
 };
 
 #endif

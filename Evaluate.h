@@ -11,6 +11,8 @@ public:
 	
 	static void Queen(const MapType &map, int color, int threadNum);
 
+	static int ourcolor;
+
 private:
 
 

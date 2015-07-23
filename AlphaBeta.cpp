@@ -16,6 +16,8 @@ int comp1(const void *b, const void *a)
 		return -1;
 }
 
+
+
 MapType ABTree::mainMap;
 int ABTree::FillBlank = 0;
 MapType ABTree::map[MAXTHREAD];
@@ -29,6 +31,7 @@ mutex ABTree::hashlock;
 mutex ABTree::conlock[MAXTHREAD];
 MoveType ABTree::bestMove[MAXTHREAD];
 int ABTree::histor[10][10][10][10][10][10];
+
 
 //线程循环挂起，等待执行命令
 void ABTree::thread_work(int num)
@@ -48,7 +51,7 @@ void ABTree::thread_work(int num)
 //初始化开启线程，只用一次
 void ABTree::init()
 {
-	srand((unsigned)time(NULL));
+//	srand((unsigned)time(NULL));
 	memset(MapType::HashTable, 0, sizeof(MapType::HashTable));
 	for (int i = 0; i < MAXTHREAD; i++)
 	{
@@ -147,7 +150,50 @@ double ABTree::LookHashTable(double alpha, double beta,int depth, int color, int
 			break;
 		}
 	}
+	else
+	{
+	}
 	return FAL;
+	//unordered_map查找
+	//HashRes HR;
+	//HashEntry HE;
+	//HE.color = color;
+	//HE.depth = depth;
+	//HE.hash32 = map[threadNum].HashKey32;
+	//HE.hash64 = map[threadNum].HashKey64;
+	//if (ChessHash.find(HE) != ChessHash.end())
+	//{
+	//	HR = ChessHash[HE];
+	//	switch (HR.entry)
+	//	{
+	//	case exact:
+	//		return HR.val;
+	//		//上下界需要满足剪枝条件才哈希命中
+	//	case lower_bound:
+	//	{
+	//						if (HR.val >= beta)
+	//							return HR.val;
+	//						else
+	//						{
+	//							MapType::HashOK[2]++;
+	//							break;
+	//						}
+	//	}
+	//	case upper_bound:
+	//	{
+	//						if (HR.val <= alpha)
+	//							return HR.val;
+	//						else
+	//						{
+	//							MapType::HashOK[2]++;
+	//							break;
+	//						}
+	//	}
+	//	default:
+	//		break;
+	//	}
+	//}
+	//return FAL;
 }
 
 //写入哈希表
@@ -163,6 +209,17 @@ void ABTree::EnterHashTable(double val, entry_type entry, int depth, int color, 
 	HT->entry = entry;
 	HT->val = val;
 	HT->depth = depth;
+	//unordered_map写入
+	/*HashRes HR;
+	HashEntry HE;
+	HE.color = color;
+	HE.depth = depth;
+	HE.hash64 = map[threadNum].HashKey64;
+	HE.hash32 = map[threadNum].HashKey32;
+	HR.entry = entry;
+	HR.val = val;
+
+	ChessHash[HE] = HR;*/
 }
 
 double ABTree::AlphaBeta(int depth, double alpha, double beta, int color, int threadNum)
@@ -264,16 +321,8 @@ void ABTree::doThread(int threadNum, int depth, int color)
 MoveType ABTree::SearchGoodMove(int depth, int color)
 {
 	double maxval = -INF;
-	MoveType best;
+	MoveType best=MoveType();
 
-	if (depth >= 2)
-	{
-		qsort(mainMap.MoveStack[0].moves, mainMap.MoveStack[0].len, sizeof(MoveType), comp1);
-		for (int i = 0; i < mainMap.MoveStack[0].len; i++)
-		{
-			mainMap.MoveStack[0].moves[i].num = i;
-		}
-	}
 	NTmove = 0;
 	GlobalAlpha = -INF;
 	//开启多线程搜索
